@@ -7,6 +7,6 @@ class Day2Test{
 
     @Test
     fun day1test() {
-        Assertions.assertThat(programAlarm("1,9,10,3,2,3,11,0,99,30,40,50",false)).isEqualTo(3500)
+        Assertions.assertThat(programAlarm("1,9,10,3,2,3,11,0,99,30,40,50",9,10)).isEqualTo(3500)
     }
 }

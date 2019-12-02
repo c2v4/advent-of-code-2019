@@ -2,12 +2,10 @@ package com.c2v4.advent18
 
 import java.lang.IllegalStateException
 
-fun programAlarm(input: String, replace: Boolean = true): Int {
+fun programAlarm(input: String, first:Int, second:Int): Int {
     val array = input.split(',').map { it.toInt() }.toIntArray()
-    if (replace) {
-        array[1] = 12
-        array[2] = 2
-    }
+    array[1]=first
+    array[2]=second
     var pointer = 0
     loop@ while(true){
         val instruction = array[pointer]
@@ -30,5 +28,5 @@ fun programAlarm(input: String, replace: Boolean = true): Int {
 
 
 fun main(args: Array<String>) {
-    println(programAlarm("day2.txt".asResource()))
+    println(programAlarm("day2.txt".asResource(),12,2))
 }
