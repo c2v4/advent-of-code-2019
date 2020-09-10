@@ -1,7 +1,5 @@
 package com.c2v4.advent18
 
-import java.lang.IllegalStateException
-
 fun findAlarm(input: String, toAchieve: Int): Int {
   (0..100).forEach { x ->
     (0..100).forEach { y ->
@@ -14,6 +12,7 @@ fun findAlarm(input: String, toAchieve: Int): Int {
   }
   return 0
 }
+
 fun main(args: Array<String>) {
   println(findAlarm("day2.txt".asResource(), 19690720))
 }
