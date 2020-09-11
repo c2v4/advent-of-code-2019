@@ -1,0 +1,106 @@
+package com.c2v4.advent18
+
+import io.reactivex.rxjava3.core.Observable
+import java.util.*
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
+
+fun crossedWiresPlus(input: String): Int {
+  createIntersections(input)
+  return 0
+}
+
+fun createIntersections(input: String) =
+  createWires(input)
+      .fold(Observable.empty<Wire>(), { acc, observable -> acc.mergeWith(observable) })
+      .scan(WireState()) { state, wire ->
+        state.addToKnownWires(wire)
+        state.intersections[wire.source].addAll(state.calculateCollisions(wire))
+        state.addDistance(wire)
+        state
+      }
+      .skip(1)
+      .distinct()
+
+
+data class WireState(
+    val wires: Array<EnumMap<Alignment, TreeMap<Int, Wire>>> =
+        Array(2) {
+          EnumMap(
+              mapOf<Alignment, TreeMap<Int, Wire>>(
+                  Alignment.HORIZONTAL to TreeMap(), Alignment.VERTICAL to TreeMap()))
+        },
+    val lengths: IntArray = IntArray(2),
+    val intersections: Array<MutableSet<Pair<Point, Int>>> = Array(2) { mutableSetOf<Pair<Point, Int>>() }
+) {
+
+  fun calculateCollisions(wire: Wire): Set<Pair<Point, Int>> =
+    getWiresInRange(wire)
+        .asSequence()
+        .filter { (_, otherWire) -> checkColide(wire, otherWire) }
+        .map {
+          val intersection = createIntersection(wire, it.value)
+          intersection to
+              calculateDistance(wire,it.value,intersection)
+        }
+        .toSet()
+
+
+  private fun calculateDistance(wire: Wire, other: Wire, intersection: Point): Int {
+    val (horizontal,vertical) = if(wire.isHorizontal()) wire to other else other to wire
+    return lengths[wire.source] + abs(intersection.x-horizontal.getFixedValue())+abs(intersection.y-vertical.getFixedValue())
+  }
+
+  private fun createIntersection(wire: Wire, other: Wire) =
+      if (wire.isHorizontal()) Point(other.getFixedValue(), wire.getFixedValue())
+      else Point(wire.getFixedValue(), other.getFixedValue())
+
+  private fun checkColide(wire: Wire, other: Wire): Boolean =
+      wire.getFixedValue() in other.getVariableRange()
+
+  private fun getWiresInRange(wire: Wire) =
+      wires[getOppositeSource(wire)][wire.getAlignment().opposite()].subMap(wire.getVariableRange())
+
+  private fun getOppositeSource(wire: Wire): Int = if (wire.source == 0) 1 else 0
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+
+    other as WireState
+
+    if (!wires.contentEquals(other.wires)) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = wires.contentHashCode()
+    return result
+  }
+
+  fun addDistance(wire: Wire) {
+    lengths[wire.source] += wire.length()
+  }
+}
+
+private fun Wire.getFixedValue(): Int = if (isHorizontal()) start.y else start.x
+
+private fun <K : Comparable<K>, V> TreeMap<K, V>?.subMap(range: ClosedRange<K>) =
+    this!!.subMap(range.start, range.endInclusive)
+
+private fun Wire.getVariableRange(): IntRange =
+    if (isHorizontal()) min(this.start.x, this.finish.x)..max(this.start.x, this.finish.x)
+    else min(this.start.y, this.finish.y)..max(this.start.y, this.finish.y)
+
+private fun Alignment.opposite(): Alignment =
+    if (this == Alignment.VERTICAL) Alignment.HORIZONTAL else Alignment.VERTICAL
+
+fun WireState.addToKnownWires(wire: Wire) =
+    wires[wire.source][wire.getAlignment()]?.put(
+        if (wire.isHorizontal()) wire.start.y else wire.start.x, wire)
+
+fun main() {
+  println(crossedWiresPlus("day3.txt".asResource()))
+}
