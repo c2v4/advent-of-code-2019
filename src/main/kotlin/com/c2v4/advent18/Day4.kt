@@ -14,5 +14,5 @@ fun notDecreasing(string: String): Boolean =
 
 
 fun containsDouble(string: String): Boolean =
-    string.windowed(2).any { it[0]==it[1] }
+    string.contains(Regex("(.)\\1{1}"))
 
