@@ -1,28 +1,50 @@
 package com.c2v4.advent18
 
 import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.kotlin.toObservable
 import java.util.*
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
 fun crossedWiresPlus(input: String): Int {
-  createIntersections(input)
-  return 0
+  val value =
+      createIntersections(input)
+          .flatMap { it.intersections.flatten().map { it.second }.toObservable() }
+          .filter { it != 0 }
+          .firstElement()
+          .blockingGet()
+  val list =
+      createIntersections(input)
+          .toList()
+          .blockingGet()
+  return value
 }
 
 fun createIntersections(input: String) =
-  createWires(input)
-      .fold(Observable.empty<Wire>(), { acc, observable -> acc.mergeWith(observable) })
-      .scan(WireState()) { state, wire ->
-        state.addToKnownWires(wire)
-        state.intersections[wire.source].addAll(state.calculateCollisions(wire))
-        state.addDistance(wire)
-        state
-      }
-      .skip(1)
-      .distinct()
-
+    createWires(input)
+        .fold(Observable.empty<Wire>(), { acc, observable -> acc.mergeWith(observable) })
+        .scan((Wire(ZERO, ZERO) to 0) to Array(2) { 0 }) {
+        t1: Pair<Pair<Wire, Int>, Array<Int>>,
+        t2: Wire ->
+          val soFar = t1.second[(t2.source)]
+          t1.second[t2.source] += t2.length()
+          (t2 to soFar) to t1.second
+        }
+        .skip(1)
+        .map { it.first }
+        .sorted(compareBy { t -> t.second })
+        .map { it.first }
+        .scan(WireState()) { state, wire ->
+          state.addToKnownWires(wire)
+          val newIntersections =
+              listOf<MutableList<Pair<Point, Int>>>(mutableListOf(), mutableListOf())
+          newIntersections[wire.source].addAll(state.calculateCollisions(wire))
+          val newState = state.copy(intersections = newIntersections)
+          newState.addDistance(wire)
+          newState
+        }
+        .skip(1)
 
 data class WireState(
     val wires: Array<EnumMap<Alignment, TreeMap<Int, Wire>>> =
@@ -32,24 +54,24 @@ data class WireState(
                   Alignment.HORIZONTAL to TreeMap(), Alignment.VERTICAL to TreeMap()))
         },
     val lengths: IntArray = IntArray(2),
-    val intersections: Array<MutableSet<Pair<Point, Int>>> = Array(2) { mutableSetOf<Pair<Point, Int>>() }
+    val intersections: List<List<Pair<Point, Int>>> = emptyList()
 ) {
 
   fun calculateCollisions(wire: Wire): Set<Pair<Point, Int>> =
-    getWiresInRange(wire)
-        .asSequence()
-        .filter { (_, otherWire) -> checkColide(wire, otherWire) }
-        .map {
-          val intersection = createIntersection(wire, it.value)
-          intersection to
-              calculateDistance(wire,it.value,intersection)
-        }
-        .toSet()
-
+      getWiresInRange(wire)
+          .asSequence()
+          .filter { (_, otherWire) -> checkColide(wire, otherWire) }
+          .map {
+            val intersection = createIntersection(wire, it.value)
+            intersection to calculateDistance(wire, it.value, intersection)
+          }
+          .toSet()
 
   private fun calculateDistance(wire: Wire, other: Wire, intersection: Point): Int {
-    val (horizontal,vertical) = if(wire.isHorizontal()) wire to other else other to wire
-    return lengths[wire.source] + abs(intersection.x-horizontal.getFixedValue())+abs(intersection.y-vertical.getFixedValue())
+    val (horizontal, vertical) = if (wire.isHorizontal()) wire to other else other to wire
+    return lengths.sum() + abs(intersection.x - wire.start.x) + abs(intersection.y - wire.start.y) -
+        abs(intersection.x - other.finish.x) -
+        abs(intersection.y - other.finish.y)
   }
 
   private fun createIntersection(wire: Wire, other: Wire) =
