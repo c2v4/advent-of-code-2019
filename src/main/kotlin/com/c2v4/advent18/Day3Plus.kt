@@ -12,21 +12,17 @@ fun crossedWiresPlus(input: String): Int {
       createIntersections(input)
           .flatMap { it.intersections.flatten().map { it.second }.toObservable() }
           .filter { it != 0 }
-          .firstElement()
-          .blockingGet()
-  val list =
-      createIntersections(input)
           .toList()
           .blockingGet()
-  return value
+          .min()
+  return value!!
 }
 
 fun createIntersections(input: String) =
     createWires(input)
         .fold(Observable.empty<Wire>(), { acc, observable -> acc.mergeWith(observable) })
-        .scan((Wire(ZERO, ZERO) to 0) to Array(2) { 0 }) {
-        t1: Pair<Pair<Wire, Int>, Array<Int>>,
-        t2: Wire ->
+        .scan((Wire(ZERO, ZERO) to 0) to Array(2) { 0 }) { t1: Pair<Pair<Wire, Int>, Array<Int>>,
+                                                           t2: Wire ->
           val soFar = t1.second[(t2.source)]
           t1.second[t2.source] += t2.length()
           (t2 to soFar) to t1.second
@@ -54,6 +50,7 @@ data class WireState(
                   Alignment.HORIZONTAL to TreeMap(), Alignment.VERTICAL to TreeMap()))
         },
     val lengths: IntArray = IntArray(2),
+    val lengthMap: MutableMap<Wire, Int> = mutableMapOf(),
     val intersections: List<List<Pair<Point, Int>>> = emptyList()
 ) {
 
@@ -68,10 +65,11 @@ data class WireState(
           .toSet()
 
   private fun calculateDistance(wire: Wire, other: Wire, intersection: Point): Int {
-    val (horizontal, vertical) = if (wire.isHorizontal()) wire to other else other to wire
-    return lengths.sum() + abs(intersection.x - wire.start.x) + abs(intersection.y - wire.start.y) -
-        abs(intersection.x - other.finish.x) -
-        abs(intersection.y - other.finish.y)
+    return lengthMap.get(wire)!! + lengthMap.get(other)!! +
+        abs(intersection.x - wire.start.x) +
+        abs(intersection.y - wire.start.y) +
+        abs(intersection.x - other.start.x) +
+        abs(intersection.y - other.start.y)
   }
 
   private fun createIntersection(wire: Wire, other: Wire) =
@@ -98,7 +96,7 @@ data class WireState(
   }
 
   override fun hashCode(): Int {
-    var result = wires.contentHashCode()
+    val result = wires.contentHashCode()
     return result
   }
 
@@ -119,9 +117,11 @@ private fun Wire.getVariableRange(): IntRange =
 private fun Alignment.opposite(): Alignment =
     if (this == Alignment.VERTICAL) Alignment.HORIZONTAL else Alignment.VERTICAL
 
-fun WireState.addToKnownWires(wire: Wire) =
-    wires[wire.source][wire.getAlignment()]?.put(
-        if (wire.isHorizontal()) wire.start.y else wire.start.x, wire)
+fun WireState.addToKnownWires(wire: Wire) {
+  wires[wire.source][wire.getAlignment()]?.put(
+      if (wire.isHorizontal()) wire.start.y else wire.start.x, wire)
+  lengthMap[wire] = lengths[wire.source]
+}
 
 fun main() {
   println(crossedWiresPlus("day3.txt".asResource()))
