@@ -1,9 +1,11 @@
-package com.c2v4.advent18
+package com.c2v4.advent19
 
+import io.kotest.core.spec.style.AnnotationSpec
+import io.kotest.core.spec.style.StringSpec
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
-class Day3Test {
+class Day3Test : AnnotationSpec(){
 
   @Test
   fun day3test0() {

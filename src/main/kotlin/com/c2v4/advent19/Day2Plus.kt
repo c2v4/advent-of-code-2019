@@ -1,4 +1,4 @@
-package com.c2v4.advent18
+package com.c2v4.advent19
 
 fun findAlarm(input: String, toAchieve: Int): Int {
   (0..100).forEach { x ->

@@ -1,4 +1,4 @@
-package com.c2v4.advent18
+package com.c2v4.advent19
 
 import arrow.core.Either
 import arrow.core.flatMap
@@ -33,27 +33,26 @@ private fun getInstructionLogic(
 }
 
 fun getParameterExtractors(instructionWord: Int): Array<(IntArray, Int) -> Int> =
-    Array(max(getNumberOfParameters(instructionWord % 100) - 1, 0)) { i ->
-          val parameterMode = (instructionWord / (100 * 10.toDouble().pow(i)).toInt()) % 10
-          val extractingFunction =
-              parameterExtractorMap
-                  .getOrElse(parameterMode) { throw IllegalArgumentException() }
-                  .extractingFunction
-          extractingFunction
-        }
-        .plus(ParameterExtractor.IMMEDIATE.extractingFunction)
+    Array(max(getNumberOfParameters(instructionWord % 100), 0)) { i ->
+      val parameterMode = (instructionWord / (100 * 10.toDouble().pow(i)).toInt()) % 10
+      val extractingFunction =
+          parameterExtractorMap
+              .getOrElse(parameterMode) { throw IllegalArgumentException() }
+              .extractingFunction
+      extractingFunction
+    }
 
 val parameterExtractorMap =
     mapOf(0 to ParameterExtractor.POSITION, 1 to ParameterExtractor.IMMEDIATE)
 
 enum class ParameterExtractor(val extractingFunction: (IntArray, Int) -> Int) {
-  POSITION({ array, pointer -> array[array[pointer]] }),
-  IMMEDIATE({ array, pointer -> array[pointer] })
+  POSITION({ array, pointer -> array.getOrElse(array.getOrElse(pointer) { -1 }) { -1 } }),
+  IMMEDIATE({ array, pointer -> array.getOrElse(pointer) { -1 } })
 }
 
-private fun getNumberOfParameters(i: Int): Int = numberOfParameterMap.getOrElse(i, { 0 })
+private fun getNumberOfParameters(opCode: Int): Int = numberOfParameterMap.getOrElse(opCode-1,{0})
 
-private val numberOfParameterMap = mapOf(1 to 3, 2 to 3)
+private val numberOfParameterMap = arrayOf(3, 3, 1, 1, 2, 2, 3, 3)
 
 private val instructionMap:
     Map<
@@ -63,26 +62,54 @@ private val instructionMap:
             1 to
                 { state: ComputerState, parameters: IntArray ->
                   val newRegisters = state.registers.copyOf()
-                  newRegisters[parameters[2]] = parameters[0] + parameters[1]
-                  state.copy(registers = newRegisters)
+                  newRegisters[newRegisters[state.pointer + 3]] = parameters[0] + parameters[1]
+                  state.copy(
+                      registers = newRegisters, pointer = state.pointer + parameters.size + 1)
                 },
             2 to
                 { state: ComputerState, parameters: IntArray ->
                   val newRegisters = state.registers.copyOf()
-                  newRegisters[parameters[2]] = parameters[0] * parameters[1]
-                  state.copy(registers = newRegisters)
+                  newRegisters[newRegisters[state.pointer + 3]] = parameters[0] * parameters[1]
+                  state.copy(
+                      registers = newRegisters, pointer = state.pointer + parameters.size + 1)
                 },
             3 to
                 { state: ComputerState, parameters: IntArray ->
                   val newRegisters = state.registers.copyOf()
-                  newRegisters[parameters[0]] = state.input
-                  state.copy(registers = newRegisters)
+                  newRegisters[newRegisters[state.pointer + 1]] = state.input
+                  state.copy(
+                      registers = newRegisters, pointer = state.pointer + parameters.size + 1)
                 },
             4 to
                 { state: ComputerState, parameters: IntArray ->
-                  state.copy(output = state.output.plus(state.registers[parameters[0]]))
+                  state.copy(
+                      output = state.output.plus(parameters[0]),
+                      pointer = state.pointer + parameters.size + 1)
+                },
+            5 to
+                { state: ComputerState, parameters: IntArray ->
+                  state.copy(
+                      output = state.output.plus(state.registers[parameters[0]]),
+                      pointer = state.pointer + parameters.size + 1)
+                },
+            6 to
+                { state: ComputerState, parameters: IntArray ->
+                  state.copy(
+                      output = state.output.plus(state.registers[parameters[0]]),
+                      pointer = state.pointer + parameters.size + 1)
+                },
+            7 to
+                { state: ComputerState, parameters: IntArray ->
+                  state.copy(
+                      output = state.output.plus(state.registers[parameters[0]]),
+                      pointer = state.pointer + parameters.size + 1)
+                },
+            8 to
+                { state: ComputerState, parameters: IntArray ->
+                  state.copy(
+                      output = state.output.plus(state.registers[parameters[0]]),
+                      pointer = state.pointer + parameters.size + 1)
                 })
-        //        .mapValues
         .mapValues<
             Int,
             (ComputerState, IntArray) -> ComputerState,
@@ -95,9 +122,7 @@ private val instructionMap:
                       function.invoke(state.registers, state.pointer + 1 + index)
                     }
                     .toIntArray()
-            Either.right(
-                transformation(state, parameters)
-                    .copy(pointer = state.pointer + parameters.size + 1))
+            Either.right(transformation(state, parameters))
           }
         }
         .plus(99 to { computerState, _ -> Either.left(computerState) })

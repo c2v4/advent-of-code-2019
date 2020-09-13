@@ -1,7 +1,7 @@
-package com.c2v4.advent18
+package com.c2v4.advent19
 
 fun programAlarm(input: String, first: Int, second: Int): Int {
-  val array = input.split(',').map { it.toInt() }.toIntArray()
+  val array = prepareComputerInput(input)
   array[1] = first
   array[2] = second
   return compute(array).registers[0]

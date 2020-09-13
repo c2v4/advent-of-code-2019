@@ -1,4 +1,4 @@
-package com.c2v4.advent18
+package com.c2v4.advent19
 
 fun calculateFuel(input: String) = input.split(splitRegex)
         .map { it.toInt() }

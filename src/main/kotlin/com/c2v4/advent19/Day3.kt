@@ -1,4 +1,4 @@
-package com.c2v4.advent18
+package com.c2v4.advent19
 
 import io.reactivex.rxjava3.kotlin.toObservable
 import kotlin.math.abs
