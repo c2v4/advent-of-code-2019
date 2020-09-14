@@ -19,7 +19,9 @@ dependencies {
     implementation "io.arrow-kt:arrow-core:$arrow_version"
     implementation "io.arrow-kt:arrow-syntax:$arrow_version"
     implementation("io.reactivex.rxjava3:rxkotlin:3.0.0")
+    compile group: 'com.google.guava', name: 'guava', version: '29.0-jre'
     kapt    "io.arrow-kt:arrow-meta:$arrow_version"
+
 
     testCompile group: 'org.assertj', name: 'assertj-core', version: '3.8.0'
     testCompile group: 'io.kotest', name: 'kotest-runner-junit5-jvm', version: '4.2.5'
