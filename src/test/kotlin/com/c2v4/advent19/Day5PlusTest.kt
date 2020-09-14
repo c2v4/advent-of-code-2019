@@ -5,7 +5,7 @@ import io.kotest.matchers.ints.shouldBeExactly
 
 class Day5PlusTest :
     StringSpec({
-      "!The above example program uses an input instruction to ask for a single numb" +
+      "The above example program uses an input instruction to ask for a single numb" +
           "er. The program will then output 999 if the input value is below 8, output 1000 " +
           "if the input value is equal to 8, or output 1001 if the input value is greater than 8." {
             compute(

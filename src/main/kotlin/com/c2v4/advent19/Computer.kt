@@ -50,7 +50,8 @@ enum class ParameterExtractor(val extractingFunction: (IntArray, Int) -> Int) {
   IMMEDIATE({ array, pointer -> array.getOrElse(pointer) { -1 } })
 }
 
-private fun getNumberOfParameters(opCode: Int): Int = numberOfParameterMap.getOrElse(opCode-1,{0})
+private fun getNumberOfParameters(opCode: Int): Int =
+    numberOfParameterMap.getOrElse(opCode - 1, { 0 })
 
 private val numberOfParameterMap = arrayOf(3, 3, 1, 1, 2, 2, 3, 3)
 
@@ -89,26 +90,32 @@ private val instructionMap:
             5 to
                 { state: ComputerState, parameters: IntArray ->
                   state.copy(
-                      output = state.output.plus(state.registers[parameters[0]]),
-                      pointer = state.pointer + parameters.size + 1)
+                      pointer =
+                          if (parameters[0] != 0) parameters[1]
+                          else state.pointer + parameters.size + 1)
                 },
             6 to
                 { state: ComputerState, parameters: IntArray ->
                   state.copy(
-                      output = state.output.plus(state.registers[parameters[0]]),
-                      pointer = state.pointer + parameters.size + 1)
+                      pointer =
+                          if (parameters[0] == 0) parameters[1]
+                          else state.pointer + parameters.size + 1)
                 },
             7 to
                 { state: ComputerState, parameters: IntArray ->
+                  val newRegisters = state.registers.copyOf()
+                  newRegisters[newRegisters[state.pointer + 3]] =
+                      if (parameters[0] < parameters[1]) 1 else 0
                   state.copy(
-                      output = state.output.plus(state.registers[parameters[0]]),
-                      pointer = state.pointer + parameters.size + 1)
+                      registers = newRegisters, pointer = state.pointer + parameters.size + 1)
                 },
             8 to
                 { state: ComputerState, parameters: IntArray ->
+                  val newRegisters = state.registers.copyOf()
+                  newRegisters[newRegisters[state.pointer + 3]] =
+                      if (parameters[0] == parameters[1]) 1 else 0
                   state.copy(
-                      output = state.output.plus(state.registers[parameters[0]]),
-                      pointer = state.pointer + parameters.size + 1)
+                      registers = newRegisters, pointer = state.pointer + parameters.size + 1)
                 })
         .mapValues<
             Int,
